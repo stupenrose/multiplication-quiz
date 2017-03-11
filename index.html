@@ -89,7 +89,7 @@ function showNext(){
 
 function watchTimer(){
     if(gameIsOver()) return;
-    var timeout  = 15000;
+    var timeout  = 5000;
     var now = new Date().getTime();
     var elapsed = now - problemStart;
     timer.textContent = Math.floor((timeout - elapsed)/1000 + 1) + " seconds";
