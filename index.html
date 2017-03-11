@@ -1,0 +1,147 @@
+<style>
+.answer {
+    user-select: text;
+    border:0px solid black;
+    width:80;
+    display:inline-block;
+    outline:0px solid transparent;
+}
+
+
+</style>
+<h2></h2>
+<h3 class="maxScore"></h3>
+<h3 class="remaining"></h3>
+<h3 class="timer"></h3>
+<hr/>
+<h1><span class="question"></span><span class="answer" contentEditable="true" type="number"></span></h1>
+<h1 style="color:red;" class="correction"></h1>
+<div class="history"/>
+<script>
+window.addEventListener("keypress", onkeyup, false);
+
+var maxScore = 0;
+var min = 2;
+var max = 15;
+var problems = [];
+
+for(x=min;x<=max;x++){
+   for(y=x;y<=max;y++){
+      problems.push({q:(x + "x" + y), a:(x * y)});
+   }
+}
+
+var answered = [];
+var log = [];
+var question = document.getElementsByClassName("question")[0];
+var answer = document.getElementsByClassName("answer")[0];
+var correction = document.getElementsByClassName('correction')[0];
+var timer = document.getElementsByClassName('timer')[0];
+var problem, nextIdx;
+var correct = 0;
+var incorrect = 0;
+
+function gameIsOver(){
+    return problems.length==0;
+}
+function each(list, fn){
+  for(var x=0;x<list.length;x++)fn(list[x], x);
+}
+function showHistory(){
+  var div = document.getElementsByClassName("history")[0];
+  div.innerHTML = '';
+  console.log("history", log);
+  each(log, function(i){
+      var para = document.createElement("p");
+      para.textContent = i.problem.q + " = " + i.answer + (i.answer !== i.problem.a ? (" (" + i.problem.a + ")") : "")
+      div.appendChild(para);
+  }); 
+}
+function score(){
+  return (correct - (10 * incorrect));
+}
+function updateMaxScore(){
+
+    var newScore = score();
+    console.log("new score" + newScore + " max " + maxScore);
+    if(maxScore < newScore) maxScore = newScore;
+    console.log("new max " + maxScore);
+}
+
+function showNext(){
+    updateMaxScore();
+    document.getElementsByTagName('h2')[0].textContent = "score: " + score() + " (" + correct + " correct, " + incorrect + " incorrect)";
+    document.getElementsByClassName('maxScore')[0].textContent = "max: " + maxScore;
+    document.getElementsByClassName('remaining')[0].textContent = problems.length + " remaining";
+      if(gameIsOver()){
+         question.textContent = "GAME OVER";
+         answer.textContent = "";
+         showHistory();
+      }else{
+          problemStart = new Date().getTime();
+          nextIdx = Math.floor((Math.random() * problems.length));
+          problem = problems[nextIdx];
+          question.textContent = problem.q + "=";
+          answer.textContent = "";
+          correction.textContent = "";
+      }
+}
+
+function watchTimer(){
+    if(gameIsOver()) return;
+    var timeout  = 15000;
+    var now = new Date().getTime();
+    var elapsed = now - problemStart;
+    timer.textContent = Math.floor((timeout - elapsed)/1000 + 1) + " seconds";
+    if(elapsed>timeout) processResult(watchTimer);
+    else setTimeout(watchTimer, 10);
+}
+
+
+function processResult(onNext){
+    var text = answer.textContent;
+    var r = parseInt(text, 10);
+    log.push({problem:problem, answer:r});
+    function proceed(){
+      showNext();
+      if(onNext)onNext();
+    }
+    if(problem.a === r){
+       correct = correct + 1;
+       problems.splice(nextIdx, 1);
+       answered.push(problem);
+       proceed();
+    }else{
+       incorrect = incorrect + 1;
+       correction.textContent = problem.q + "=" + problem.a;
+       setTimeout(proceed, 3000);
+    }
+}
+
+function onkeyup(e){
+  if(e.keyCode == 13){
+     if(answer.textContent !== ""){
+         processResult();
+     }
+  }
+  else{
+      var char = String.fromCharCode(e.charCode);
+      answer.appendChild(document.createTextNode(char))
+  }
+  e.preventDefault();
+}
+document.onkeydown = function(e){
+console.log(e.keyCode);
+if(e.keyCode == 8){
+  var text = answer.textContent;
+  if(text.length>0){
+     answer.textContent = text.substring(0, text.length-1);
+  }
+  e.preventDefault();
+}
+};
+showNext();
+watchTimer();
+answer.focus();
+</script>
+
